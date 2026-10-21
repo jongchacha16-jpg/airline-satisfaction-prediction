@@ -1,0 +1,34 @@
+# ==========================================================================
+# 이 저장소는 "노트북과 문서"만 담는다.
+# 원본 데이터와 대용량 예측 산출물은 재현 가능하므로 포함하지 않는다.
+# ==========================================================================
+
+# OS
+.DS_Store
+
+# Kaggle 원본 데이터 (98MB) — 대회 페이지에서 내려받아 data/ 에 둘 것
+#   https://www.kaggle.com/competitions/playground-series-s6e10
+data/
+
+# 대용량 예측 산출물 (약 213MB) — 노트북을 순서대로 실행하면 재생성된다
+#   oof_*.csv  : 699,635행 × 7세트
+#   test_*.csv : 299,844행 × 7세트
+# (슬래시 없는 패턴 = 모든 하위 디렉터리에 적용)
+oof_*.csv
+test_*.csv
+
+# 제출 파일 (생성물, 각 8MB)
+submission.csv
+submission_stacker_*.csv
+
+# CatBoost 학습 로그
+catboost_info/
+
+# 실행 로그
+*.log
+
+# Python
+__pycache__/
+*.py[oc]
+.venv/
+.ipynb_checkpoints/

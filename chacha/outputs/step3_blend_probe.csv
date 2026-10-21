@@ -1,0 +1,16 @@
+조합,n,rank-avg OOF,Δ vs lgbm_tuned
+lgbm_tuned + lgbm_fe + cat,3,0.95989,3e-05
+lgbm_tuned + lgbm_fe + cat + xgb,4,0.95988,3e-05
+lgbm_tuned + lgbm_fe + mlp + cat + xgb,5,0.95986,0.0
+lgbm_tuned + cat,2,0.95984,-1e-05
+lgbm_tuned + lgbm_fe + xgb,3,0.95984,-1e-05
+lgbm_tuned + cat + xgb,3,0.95982,-3e-05
+lgbm_tuned + lgbm_fe + mlp + xgb,4,0.95981,-5e-05
+lgbm_tuned + xgb,2,0.9598,-5e-05
+lgbm_tuned + lgbm_fe + mlp + cat,4,0.9598,-6e-05
+lgbm_tuned + lgbm_fe,2,0.95978,-8e-05
+lgbm_tuned + mlp + cat + xgb,4,0.95978,-8e-05
+lgbm_tuned + mlp + xgb,3,0.9597,-0.00016
+lgbm_tuned + lgbm_fe + mlp,3,0.95966,-0.0002
+lgbm_tuned + mlp + cat,3,0.95965,-0.00021
+lgbm_tuned + mlp,2,0.95935,-0.00051

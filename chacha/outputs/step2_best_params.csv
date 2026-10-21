@@ -1,0 +1,8 @@
+,0
+num_leaves,60.0
+min_child_samples,21.0
+feature_fraction,0.8002698728470815
+bagging_fraction,0.8935103466322043
+bagging_freq,6.0
+lambda_l1,0.0020505363169893978
+lambda_l2,8.182988404337182

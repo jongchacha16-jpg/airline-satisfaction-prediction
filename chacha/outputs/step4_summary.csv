@@ -1,0 +1,9 @@
+구성,OOF,Δ vs champion
+logit + LogReg,0.95994,8e-05
+logit + LogReg (C=0.1),0.95994,8e-05
+lgbm_tuned 단독 (champion),0.95986,0.0
+동일가중 rank-average (전 모델),0.95981,-5e-05
+prob + LogReg,0.9598,-6e-05
+prob + LogReg (C=0.1),0.95978,-7e-05
+rank + LogReg (C=0.1),0.95969,-0.00017
+rank + LogReg,0.95968,-0.00018
