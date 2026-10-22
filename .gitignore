@@ -17,9 +17,8 @@ data/
 oof_*.csv
 test_*.csv
 
-# 제출 파일 (생성물, 각 8MB)
-submission.csv
-submission_stacker_*.csv
+# 제출 파일 (생성물, 각 8MB) — 노트북 재실행으로 재생성된다
+submission*.csv
 
 # CatBoost 학습 로그
 catboost_info/

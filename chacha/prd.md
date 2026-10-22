@@ -5,9 +5,9 @@
 >
 > **작업 폴더 (Working Directory)**: 신규 분석은 전부 `중간평가/chacha/` 안에서 진행한다.
 > - 노트북: `chacha/<주제>[Lab].ipynb`
-> - 예측 산출물: `chacha/outputs/`
+> - 예측 산출물: `chacha/outputs/predictions/` (모델 예측) · `chacha/outputs/reports/` (실험 기록)
 > - 데이터: 복사하지 않고 `../data/` 를 그대로 참조 (`find_data_dir()` 가 `data` / `../data` 를 모두 탐색하므로 수정 불필요)
-> - 기존 `중간평가/outputs/oof_mlp.csv`·`test_mlp.csv` 는 **`chacha/outputs/` 로 복사**해 스태킹 입력을 한 폴더에 모은다.
+> - 기존 `중간평가/outputs/oof_mlp.csv`·`test_mlp.csv` 는 **`chacha/outputs/predictions/` 로 복사**해 스태킹 입력을 한 폴더에 모은다.
 > - 루트 `중간평가/baseline[Lab].ipynb`, `submission.csv` 등 **기존 파일은 수정하지 않는다** (읽기 전용 참조).
 
 ---
@@ -23,7 +23,7 @@
 | `data/sample_submission.csv` | 299,844 × 2 (`id`, `satisfaction` = 확률값 0.4436…) |
 | `baseline[Lab].ipynb` | EDA + LogReg 벤치마크 + LightGBM 5-Fold (43 cells, 실행 완료) |
 | `mlp_pytorch_baseline[Lab].ipynb` | PyTorch MLP 5-Fold (18 cells, 실행 완료) |
-| `outputs/oof_mlp.csv`, `outputs/test_mlp.csv` | MLP의 OOF/Test 예측 (스태킹 입력) |
+| `outputs/oof_mlp.csv`, `outputs/test_mlp.csv` | MLP의 OOF/Test 예측 (스태킹 입력) — 현재는 `chacha/outputs/predictions/` 로 복사됨 |
 | `submission.csv` | 현재 제출본 = LightGBM 5-Fold 앙상블 |
 
 ### 1-2. 데이터 스키마
@@ -156,8 +156,15 @@ FOLDS = list(skf.split(train, y))   # train 전체 인덱스 기준, 정렬/셔�
 
 `mlp_pytorch_baseline[Lab].ipynb`의 `save_predictions()` 규약을 그대로 재사용한다.
 
-- `chacha/outputs/oof_<name>.csv` → 컬럼 `id, fold, pred` (train 699,635행)
-- `chacha/outputs/test_<name>.csv` → 컬럼 `id, pred` (test 299,844행)
+- `chacha/outputs/predictions/oof_<name>.csv` → 컬럼 `id, fold, pred` (train 699,635행)
+- `chacha/outputs/predictions/test_<name>.csv` → 컬럼 `id, pred` (test 299,844행)
+- `chacha/outputs/reports/` → 단계별 요약 · Optuna 탐색 로그 (모델 입력이 아닌 분석 기록)
+
+```
+outputs/
+├── predictions/   oof_* · test_* × 7 모델 = 14 파일   ← 스태킹 입력, Fold 계약 대상
+└── reports/       folds_lgbm · step1~4 요약 = 7 파일  ← 실험 기록
+```
 - `<name>` ∈ `lgbm`, `mlp`, `cat`, `xgb`, `lgbm_fe`, `stack`
 - 저장 전 `np.isfinite(...).all()` assert 유지
 
@@ -175,7 +182,7 @@ assert submission[TARGET].notna().all()
 assert submission[TARGET].between(0, 1).all()
 ```
 
-> **덮어쓰기 정책**: 신규 모델은 `chacha/outputs/` 에만 쓴다. 루트 `중간평가/submission.csv` 는 건드리지 않고,
+> **덮어쓰기 정책**: 신규 모델은 `chacha/outputs/predictions/` 에만 쓴다. 루트 `중간평가/submission.csv` 는 건드리지 않고,
 > 최종 제출본은 `chacha/submission_<모델>_<OOF점수>.csv` 로 저장한다. **루트 `submission.csv` 는 끝까지 불가침**으로 운용했다 (§8 참조).
 
 ### 3-4. 실험 프로토콜 (baseline 9장 "실험 원칙" 계승)
@@ -218,8 +225,8 @@ cell 40에서 `test_pred` 만 `submission.csv` 로 저장하고 끝난다. **`oo
 
 | 생성 파일 | 내용 | 용도 |
 |---|---|---|
-| `chacha/outputs/oof_lgbm.csv` | `id, fold, pred` × 699,635행 — 각 행이 **검증 fold에 속했을 때의 예측값** | 스태킹 메타 모델의 입력 컬럼. 이게 없으면 Step 4 자체가 성립 불가 |
-| `chacha/outputs/test_lgbm.csv` | `id, pred` × 299,844행 — 5개 fold 모델 예측의 평균 | 스태킹 결과를 test에 적용할 때 필요. `submission.csv` 와 수치는 같지만 컬럼명 규약(`pred`)이 다름 |
+| `chacha/outputs/predictions/oof_lgbm.csv` | `id, fold, pred` × 699,635행 — 각 행이 **검증 fold에 속했을 때의 예측값** | 스태킹 메타 모델의 입력 컬럼. 이게 없으면 Step 4 자체가 성립 불가 |
+| `chacha/outputs/predictions/test_lgbm.csv` | `id, pred` × 299,844행 — 5개 fold 모델 예측의 평균 | 스태킹 결과를 test에 적용할 때 필요. `submission.csv` 와 수치는 같지만 컬럼명 규약(`pred`)이 다름 |
 
 **왜 OOF가 반드시 파일이어야 하는가**: 스태킹 메타 모델은 "베이스 모델이 *학습에 쓰지 않은* 데이터에 대해 낸 예측"으로만
 학습해야 한다. fold 1의 검증 예측은 fold 2~5로 학습한 모델이 낸 값이므로 누수가 없다.
@@ -236,8 +243,10 @@ train 전체를 다시 예측하면(= in-fold 예측) 자기 학습 데이터를
 - 재현 OOF AUC 가 **0.95866 ± 0.0002** 이내인가 → 벗어나면 fold 분할이나 전처리가 baseline과 달라졌다는 뜻이므로 원인 규명 전까지 다음 단계 진행 금지.
 - `oof_lgbm.csv` 의 `fold` 컬럼이 `중간평가/outputs/oof_mlp.csv` 의 `fold` 컬럼과 **행별로 완전히 동일**한가:
   ```python
-  assert (pd.read_csv("outputs/oof_lgbm.csv")["fold"].values ==
-          pd.read_csv("outputs/oof_mlp.csv")["fold"].values).all()
+  a = pd.read_csv("outputs/predictions/oof_lgbm.csv")[["id", "fold"]]
+  b = pd.read_csv("outputs/predictions/oof_mlp.csv")[["id", "fold"]]
+  m = a.merge(b, on="id", suffixes=("_lgbm", "_mlp"), validate="one_to_one")
+  assert len(m) == 699_635 and (m.fold_lgbm == m.fold_mlp).all()
   ```
   이 assert가 Step 0의 핵심 산출물이다 — 두 노트북이 같은 fold 계약을 쓰고 있음을 증명하며,
   이후 모든 모델이 이 계약에 묶인다.
@@ -260,7 +269,7 @@ EDA 근거 기반으로만 설계. 아래 4개 그룹을 **그룹 단위로 순�
 → **LGBM/CatBoost/XGB: NaN 유지** (분기 자동 학습), **LogReg/MLP: median imputation**. 기존 컨벤션과 동일.
 **누수 방지**: F1~F3은 행 단위 변환이므로 전체 적용 가능. F4는 **반드시 fold별 train에서만 fit**.
 
-- 채택 기준: 그룹 추가 후 OOF AUC > 직전 최고치 **且 4/5 fold 개선**.
+- 채택 기준: 그룹 추가 후 OOF AUC > 직전 최고치 **그리고 4/5 fold 개선**.
 - 예산: 실측 468초 (7개 구성). **→ 완료, 결과는 §7 참조.**
 
 ### Step 2 — 하이퍼파라미터 탐색 (`chacha/02_hyperparameter_tuning[Lab].ipynb`) ✅ 완료
@@ -285,12 +294,12 @@ EDA 근거 기반으로만 설계. 아래 4개 그룹을 **그룹 단위로 순�
 | **XGBoost** (선택) | 예산 여유 시에만. CatBoost 대비 다양성 기여 적으면 생략 | ~25분 |
 | MLP | 이미 보유 (`outputs/*_mlp.csv`) | 0 |
 
-각 모델은 Step 1 채택 피처 + §3-1 fold 계약으로 학습하고 `save_predictions()`로 `chacha/outputs/` 에 저장.
+각 모델은 Step 1 채택 피처 + §3-1 fold 계약으로 학습하고 `save_predictions()`로 `chacha/outputs/predictions/` 에 저장.
 **추가 판단 기준**: 신규 모델 OOF가 단독으로 0.95 미만이거나 LGBM OOF와 피어슨 상관 > 0.99면 다양성 기여 없음 → 생략.
 
 ### Step 4 — 스태킹 (`chacha/04_stacking[Lab].ipynb`) ✅ 완료
 
-- 입력: `chacha/outputs/oof_*.csv` 를 `id` 기준 merge
+- 입력: `chacha/outputs/predictions/oof_*.csv` 를 `id` 기준 merge
 - **입력 비대칭 주의**: `lgbm_tuned` 는 3-seed 예측 평균이라 이미 분산이 낮다. 단일 모델 `mlp` 와 동등하지 않다. → 피처 행렬 (모델 수만큼의 컬럼).
 - 메타 모델: **Logistic Regression** 1순위 (해석 용이, 가중치를 발표에 활용), Ridge / shallow LGBM 비교.
 - 메타 모델의 CV는 **동일한 `fold` 컬럼**으로 수행 (새 분할 생성 금지).
@@ -391,9 +400,18 @@ Fold별 AUC: 0.95947 / 0.95839 / 0.96013 / 0.95930 / 0.95946 (5/5 개선)
 | 8c | 〃 | **logit + LogReg** | **0.95994** | **+0.00008** | 〃 | **✅ 4/5 fold — 최종 채택** |
 
 **최종 산출물**: `chacha/submission_stacker_0.95994.csv` (299,844행, §3-3 assert 7종 전부 통과)
-`outputs/oof_stack.csv` / `test_stack.csv` 동시 저장.
+`outputs/predictions/oof_stack.csv` / `test_stack.csv` 동시 저장.
 
 **최종 누적**: 기준선 `0.95866` → **`0.95994`** (**+0.00128**). 1차 목표 `0.9600` 대비 **−0.00006 미달**.
+
+| 9 | — | **Public LB 제출 — 스태킹** | LB **0.95935** | OOF 대비 −0.00059 | — | 최종 제출 |
+| 9b | — | Public LB 제출 — `lgbm_tuned` 단독 (대조군) | LB 0.95922 | OOF 대비 −0.00064 | — | 비교용 |
+
+**LB 검증 결론 (2026-10-22)**: 두 구성의 OOF→LB 격차가 −0.00059 / −0.00064 로 **거의 동일**하다.
+OOF는 절대 수치로 약 0.0006 낙관적이나 **편향이 모델 간 일정**하므로 상대 비교 도구로 유효하다
+— §3-4의 "직전 채택본 대비 Δ" 판정 원칙이 실증되었다.
+스태킹 이득은 로컬 +0.00008 → LB **+0.00013** 으로 **축소되지 않고 전이**되었다.
+§7 Step 3·4 「5」에서 제기한 "MLP 편향 의존" 우려는 **기각**된다 (단, 단일 공개 표본이므로 크기는 잡음 범위).
 
 
 ---
@@ -512,7 +530,7 @@ BASE 위에 F4만 올리자 **0.95934 (+0.00068)** 로 개선폭이 1.5배가 �
 
 ## 8. 완료 정의 (Definition of Done)
 
-- [x] `chacha/outputs/` 에 모든 모델의 `oof_*.csv` / `test_*.csv` 존재, fold 컬럼 전원 일치
+- [x] `chacha/outputs/predictions/` 에 모든 모델의 `oof_*.csv` / `test_*.csv` 존재, fold 컬럼 전원 일치
       (`lgbm`, `lgbm_fe`, `lgbm_tuned`, `cat`, `xgb`, `mlp`, `stack` — Step 4 첫 셀에서 assert 통과)
 - [x] 최종 OOF AUC **0.95994**. 1차 목표 `0.9600` 에 **−0.00006 미달** — 사유는 §7 Step 3·4 「7」:
       피처(Step 1 3/4 기각)·앙상블(스태킹 +0.00008) 양쪽에서 여지가 소진됨. 튜닝만이 유효했다(+0.00052).
